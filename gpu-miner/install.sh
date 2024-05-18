@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 [ -t 1 ] && . colors
 
+GIT_REPO='https://github.com/TrueCarry/JettonGramGpuMiner'
+
 function NeedToInstall() {
 	local ver=`apt-cache policy $1 | grep Installed | sed 's/Installed://; s/\s*//'`
 	[[ $ver && $ver != '(none)' ]] && echo 0 || echo 1
@@ -42,10 +44,8 @@ fi
 dir=/hive/miners/custom/gpu-miner/miner
 if [[ ! -d $dir/.git ]]; then
 	echo "> git dir does not exist, cloning"
-	git clone https://github.com/TrueCarry/JettonGramGpuMiner.git $dir
+	git clone $GIT_REPO.git $dir
 
-	wget https://github.com/tontechio/pow-miner-gpu/releases/download/20211230.1/minertools-cuda-ubuntu-18.04-x86-64.tar.gz -O minertools.tar.gz
-	tar -xzvf minertools.tar.gz -C $dir
 	cd $dir
 	npm i
 else
@@ -56,8 +56,7 @@ else
 fi
 
 cd ..
-fileToReplace='send_multigpu_meridian.js'
-[[ -f $fileToReplace ]] && cp $fileToReplace $dir/$fileToReplace
+
 # if we have modified files, than change them
 filesToChange=("send_multigpu.js" "givers.js" "pow-miner-cuda")
 for (( i = 0; i < ${#filesToChange[@]}; i++ )); do
