@@ -15,16 +15,16 @@ exports.givers100000 = exports.givers10000 = exports.givers1000 = exports.givers
 // ];
 
 exports.givers1000 = [
-    { address: "EQBUmN2uinHEFjBymG3SV010oeDABQ_8R-z1PRuV1YLRImL9", reward: 10000 },
-    { address: "EQC51U_4w6ItbeHvQs0RhuT3cwsytrDaJbG55BU-ZAzUfB4n", reward: 10000 },
-    { address: "EQBT-Dbj7JkZltw-IVLbep0NTgaEGgSMUMIp4km8mYkPV6I8", reward: 10000 },
-    { address: "EQD7GQw_BEo9KX7t1WpIa42KeQ3h8f4hVejip453l4qVLdNk", reward: 10000 },
-    { address: "EQDEjyEOuJU5UggCaW-aN7_NxPF-ZULzcmCEY1AwEmzg5yuy", reward: 10000 },
-    { address: "EQD5Viou03CU_oQKsyuneGv4Q2scxeLw-pfY4rIoa8sLlYtI", reward: 10000 },
-    { address: "EQAWSBd3IiRJQiTWr2qjYNgUFCA0u6zSs5H6S3ghOeMp0s-r", reward: 10000 },
-    { address: "EQCklqxLokjCHkujRzAZMlaGM4JSUHS3IpUhqQ6y8mzD2DiL", reward: 10000 },
-    { address: "EQAD7ylSr3X0TVUrjtpaaLhEwZYi9ucCAjdhjANF4SLpFcrr", reward: 10000 },
-    { address: "EQAdugQfgubyVOtzcfn-ca7WEyepnp7BYP5oS0w5A15zIH78", reward: 10000 }, // 1000
+    { address: "EQBUmN2uinHEFjBymG3SV010oeDABQ_8R-z1PRuV1YLRImL9", reward: 1000 },
+    { address: "EQC51U_4w6ItbeHvQs0RhuT3cwsytrDaJbG55BU-ZAzUfB4n", reward: 1000 },
+    { address: "EQBT-Dbj7JkZltw-IVLbep0NTgaEGgSMUMIp4km8mYkPV6I8", reward: 1000 },
+    { address: "EQD7GQw_BEo9KX7t1WpIa42KeQ3h8f4hVejip453l4qVLdNk", reward: 1000 },
+    { address: "EQDEjyEOuJU5UggCaW-aN7_NxPF-ZULzcmCEY1AwEmzg5yuy", reward: 1000 },
+    { address: "EQD5Viou03CU_oQKsyuneGv4Q2scxeLw-pfY4rIoa8sLlYtI", reward: 1000 },
+    { address: "EQAWSBd3IiRJQiTWr2qjYNgUFCA0u6zSs5H6S3ghOeMp0s-r", reward: 1000 },
+    { address: "EQCklqxLokjCHkujRzAZMlaGM4JSUHS3IpUhqQ6y8mzD2DiL", reward: 1000 },
+    { address: "EQAD7ylSr3X0TVUrjtpaaLhEwZYi9ucCAjdhjANF4SLpFcrr", reward: 1000 },
+    { address: "EQAdugQfgubyVOtzcfn-ca7WEyepnp7BYP5oS0w5A15zIH78", reward: 1000 }, // 1000
 ];
 
 exports.givers10000 = [

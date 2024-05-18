@@ -1,18 +1,23 @@
 #!/usr/bin/env bash
 [ -t 1 ] && . colors
 
-GIT_REPO='https://github.com/TrueCarry/JettonGramGpuMiner'
+GIT_REPO='https://github.com/ChipiCoin/ChipiCoinGpuMiner'
 
 function NeedToInstall() {
 	local ver=`apt-cache policy $1 | grep Installed | sed 's/Installed://; s/\s*//'`
-	[[ $ver && $ver != '(none)' ]] && echo 0 || echo 1
+	if [[ ! $2 ]]; then
+    [[ $ver && $ver != '(none)' ]] && echo 0 || echo 1
+  else
+    pureVer=`echo $ver | sed 's/-.*//'`
+    [[ `echo "${pureVer} >= $2" | bc -l` -eq 1 ]] && echo 0 || echo 1
+  fi
 }
 
-if [[ $(NeedToInstall libc6) -eq 1 ]]; then
+if [[ $(NeedToInstall libc6 '2.28') -eq 1 ]]; then
 	echo -e "> Install libc6"
 	echo "deb http://cz.archive.ubuntu.com/ubuntu jammy main" >> /etc/apt/sources.list
 	apt update
-	apt install libc6 -yqq
+	apt install libc6 -yqq --no-install-recommends
 else
 	echo "${GREEN}> libc6 already installed${NOCOLOR}"
 fi
@@ -30,7 +35,7 @@ else
 	echo "${GREEN}> nodejs already installed${NOCOLOR}"
 fi
 
-NODE_MAJOR=16
+NODE_MAJOR=20
 nvm install $NODE_MAJOR
 nvm use $NODE_MAJOR
 

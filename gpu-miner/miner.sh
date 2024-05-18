@@ -12,7 +12,7 @@ if [[ ! $nvmVersion ]]; then
 else
 	echo "${GREEN}> nodejs already installed${NOCOLOR}"
 fi
-NODE_MAJOR=16
+NODE_MAJOR=20
 nvm use $NODE_MAJOR
 
 cd miner
