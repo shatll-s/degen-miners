@@ -151,6 +151,16 @@ let i = 0;
 let success = 0;
 let lastMinedSeed = BigInt(0);
 let start = Date.now();
+let enableLogging;
+setInterval(() => {
+    const seconds = new Date().getSeconds();
+    if (seconds >= 0 && seconds <= 4) {
+        enableLogging = true;
+    } else {
+        enableLogging = false;
+    }
+}, 1000);
+
 function main() {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
