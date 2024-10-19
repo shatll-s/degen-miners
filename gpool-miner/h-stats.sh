@@ -61,7 +61,8 @@ if [ "$diffTime" -lt "$maxDelay" ]; then
       rawHr=`echo $hrStr | sed "s#.*@[[:space:]]\([.0-9]*\).*H/s.*#\1#"`
 
       if [[ $rawHr =~ ^[.0-9]+$ ]]; then
-        hr=$rawHr
+        hr=`echo "scale=2; $rawHr / 1000" | bc -l`
+
         total_hr=$(echo "$total_hr + $hr" | bc)
       else
         hr=0
