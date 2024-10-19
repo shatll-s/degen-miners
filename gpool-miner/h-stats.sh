@@ -35,6 +35,7 @@ if [ "$diffTime" -lt "$maxDelay" ]; then
   readarray -t gpu_stats < <( jq --slurp -r -c '.[] | .busids, .brand, .temp, .fan | join(" ")' $GPU_STATS_JSON 2>/dev/null)
   busids=(${gpu_stats[0]})
   brands=(${gpu_stats[1]})
+#  echo "Debug: brands[0] ${brands[0]}"
   [[ ${brands[0]} == 'cpu' ]] && cpuFirst=1 || cpuFirst=0
   temps=(${gpu_stats[2]})
   fans=(${gpu_stats[3]})
@@ -50,12 +51,13 @@ if [ "$diffTime" -lt "$maxDelay" ]; then
     busid_arr+=($((16#${BASH_REMATCH[1]})))
     temp_arr+=(${temps[i]})
     fan_arr+=(${fans[i]})
-    # echo "Debug: $i $((16#${BASH_REMATCH[1]})) ${temps[i]} ${fans[i]}"
+#    echo "Debug: $i $((16#${BASH_REMATCH[1]})) ${temps[i]} ${fans[i]}"
 
     if [[ $cpuFirst -eq 1 && i -eq 0 ]]; then
       hr=0
     else
-      y=`echo "$i - 1" | bc`
+      [[ $cpuFirst -eq 1 ]] && shift=-1 || shift=0
+      y=`echo "$i + $shift" | bc`
 
       hrStr=`echo "$logPart" | grep -E "^@[[:space:]]$y[[:space:]]"`
       rawHr=`echo $hrStr | sed "s#.*@[[:space:]]\([.0-9]*\).*H/s.*#\1#"`
