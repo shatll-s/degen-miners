@@ -80,18 +80,22 @@ if [ "$diffTime" -lt "$maxDelay" ]; then
   temp_json=`printf '%s\n' "${temp_arr[@]}"  | jq -cs '.'`
 
   uptime=$(( `date +%s` - `stat -c %Y $CUSTOM_CONFIG_FILENAME` ))
+  ver=`echo $info_line | awk '{print $3}' | tr -d '()v'`
 
   oreBalance=`tail -n 200 $CUSTOM_LOG_BASENAME.log | grep -w "Current ORE balance" | tail -n 1 | awk '{print $10}'`
-  [[ ! $oreBalance ]] && oreBalance=0
-  oreBalance=`echo "scale=4; $oreBalance /1" | bc`
-  [[ ${oreBalance:0:1} == "." ]] && oreBalance="0$oreBalance"
+  if [[ ! $oreBalance ]]; then
+    oreBalance=`echo "scale=4; $oreBalance /1" | bc`
+    [[ ${oreBalance:0:1} == "." ]] && oreBalance="0$oreBalance"
+    ver="$ver | $oreBalance ORE"
+  fi
 
   coalBalance=`tail -n 200 $CUSTOM_LOG_BASENAME.log | grep -w "Current COAL balance" | tail -n 1 | awk '{print $10}'`
-  [[ ! $coalBalance ]] && coalBalance=0
-  coalBalance=`echo "scale=4; $coalBalance /1" | bc`
-  [[ ${coalBalance:0:1} == "." ]] && coalBalance="0$coalBalance"
+  if [[ $coalBalance ]]; then
+    coalBalance=`echo "scale=4; $coalBalance /1" | bc`
+    [[ ${coalBalance:0:1} == "." ]] && coalBalance="0$coalBalance"
+    ver="$ver | $coalBalance COAL"
+  fi
 
-  ver=`echo $info_line | awk '{print $3}' | tr -d '()v'`
   ver="$ver | $oreBalance ORE | $coalBalance COAL"
 
 
