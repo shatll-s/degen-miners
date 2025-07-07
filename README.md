@@ -1,1 +1,1 @@
-collection of shit miners for hujvos
+The packages are provided exclusively for the personal use of the author of the repository. Don't use them.
