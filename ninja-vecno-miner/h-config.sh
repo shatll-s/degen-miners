@@ -44,12 +44,17 @@ fi
 
 echo "Pool mode: $STRATUM_SERVER:$STRATUM_PORT"
 
+# API port for stats
+API_PORT=${NINJA_VECNO_API_PORT:-38080}
+MINER_ARGS="$MINER_ARGS --api-port $API_PORT"
+
 # Add any extra user config arguments
 if [[ ! -z "$CUSTOM_USER_CONFIG" ]]; then
     MINER_ARGS="$MINER_ARGS $CUSTOM_USER_CONFIG"
 fi
 
-# Save arguments to file for h-run.sh
+# Save arguments and API port for h-run.sh and h-stats.sh
 echo "$MINER_ARGS" > "$MINER_PATH/miner_args.txt"
+echo "$API_PORT" > "$MINER_PATH/api_port.txt"
 
 echo "Miner arguments: $MINER_ARGS"

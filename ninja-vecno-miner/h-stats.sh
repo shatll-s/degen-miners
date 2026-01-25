@@ -12,99 +12,81 @@ fi
 
 . "$MINER_PATH/h-manifest.conf"
 
-# Parse stats from log file since miner has no API
-LOG_FILE="${CUSTOM_LOG_BASENAME}.log"
-
-if [[ ! -f "$LOG_FILE" ]]; then
-    echo -e "${YELLOW}Log file not found: $LOG_FILE${NOCOLOR}"
-    khs=0
-    stats="null"
-    exit 1
-fi
-
-# Get the last 100 lines for parsing
-LOG_TAIL=$(tail -n 100 "$LOG_FILE" 2>/dev/null)
-
-if [[ -z "$LOG_TAIL" ]]; then
-    khs=0
-    stats="null"
-    exit 1
-fi
-
-# Parse total hashrate line: "Total hashrate: 21.23 Mhash/s (0 CPU threads, 1 GPUs)"
-total_line=$(echo "$LOG_TAIL" | grep -E "Total hashrate:" | tail -1)
-
-if [[ -z "$total_line" ]]; then
-    khs=0
-    stats="null"
-    exit 1
-fi
-
-# Extract total hashrate (Mhash/s)
-total_hs=$(echo "$total_line" | grep -oP 'Total hashrate: \K[0-9]+\.?[0-9]*')
-
-# Convert Mhash/s to khs (1 Mhash = 1000 kHash)
-khs=$(echo "$total_hs" | awk '{print $1 * 1000}')
-
-# Extract GPU count from the line
-gpu_count=$(echo "$total_line" | grep -oP '[0-9]+(?= GPUs?)' | head -1)
-[[ -z "$gpu_count" ]] && gpu_count=0
-
-# Count accepted and rejected shares from full log
-ac=$(echo "$LOG_TAIL" | grep -c '\[ACCEPTED\]')
-rj=$(echo "$LOG_TAIL" | grep -c '\[REJECTED\]')
-
-# Calculate uptime from miner process
-miner_pid=$(pgrep -f "ninja-vecno" | head -1)
-if [[ ! -z "$miner_pid" ]]; then
-    uptime=$(ps -o etimes= -p "$miner_pid" 2>/dev/null | tr -d ' ')
-    [[ -z "$uptime" ]] && uptime=0
+# Read API port
+API_PORT_FILE="$MINER_PATH/api_port.txt"
+if [[ -f "$API_PORT_FILE" ]]; then
+    API_PORT=$(cat "$API_PORT_FILE")
 else
-    uptime=0
+    API_PORT=38080
 fi
 
-# Parse individual GPU hashrates
-# Format: "GPU #0 NVIDIA GeForce RTX 4060 Laptop GPU hashrate: 21.23 Mhash/s"
-declare -A gpu_hashrates
+# Fetch stats from API
+API_RESPONSE=$(curl -s --connect-timeout 2 --max-time 5 "http://localhost:$API_PORT/stats" 2>/dev/null)
 
-gpu_lines=$(echo "$LOG_TAIL" | grep -E "GPU #[0-9]+ .* hashrate:" | tail -n "$gpu_count")
+if [[ -z "$API_RESPONSE" ]] || ! echo "$API_RESPONSE" | jq -e . >/dev/null 2>&1; then
+    khs=0
+    stats="null"
+    exit 1
+fi
 
-while IFS= read -r line; do
-    if [[ -z "$line" ]]; then continue; fi
-    # Extract GPU index
-    gpu_idx=$(echo "$line" | grep -oP 'GPU #\K[0-9]+')
-    # Extract hashrate
-    gpu_hs=$(echo "$line" | grep -oP 'hashrate: \K[0-9]+\.?[0-9]*')
-    if [[ ! -z "$gpu_idx" && ! -z "$gpu_hs" ]]; then
-        gpu_hashrates[$gpu_idx]=$gpu_hs
-    fi
-done <<< "$gpu_lines"
+# Parse API response
+miner_version=$(echo "$API_RESPONSE" | jq -r '.version // "unknown"')
+uptime=$(echo "$API_RESPONSE" | jq -r '.uptime_seconds // 0')
+total_hashrate=$(echo "$API_RESPONSE" | jq -r '.total_hashrate // 0')
+total_unit=$(echo "$API_RESPONSE" | jq -r '.total_hashrate_unit // "H/s"')
+ac=$(echo "$API_RESPONSE" | jq -r '.shares.accepted // 0')
+rj=$(echo "$API_RESPONSE" | jq -r '.shares.rejected // 0')
 
-# Build hashrate array sorted by GPU index
+# Convert total hashrate to kH/s for HiveOS
+case "$total_unit" in
+    "H/s")  khs=$(echo "$total_hashrate" | awk '{printf "%.3f", $1 / 1000}') ;;
+    "KH/s") khs=$(echo "$total_hashrate" | awk '{printf "%.3f", $1}') ;;
+    "MH/s") khs=$(echo "$total_hashrate" | awk '{printf "%.3f", $1 * 1000}') ;;
+    "GH/s") khs=$(echo "$total_hashrate" | awk '{printf "%.3f", $1 * 1000000}') ;;
+    "TH/s") khs=$(echo "$total_hashrate" | awk '{printf "%.3f", $1 * 1000000000}') ;;
+    *)      khs=0 ;;
+esac
+
+# Build per-GPU hashrate array (in H/s for HiveOS)
+gpu_count=$(echo "$API_RESPONSE" | jq '.gpus | length')
 hs_array="["
-for ((i=0; i<gpu_count; i++)); do
-    if [[ ! -z "${gpu_hashrates[$i]}" ]]; then
-        # Convert Mhash/s to hash/s for the array (HiveOS expects raw values)
-        hs_val=$(echo "${gpu_hashrates[$i]}" | awk '{printf "%.0f", $1 * 1000000}')
-        hs_array+="$hs_val"
-    else
-        hs_array+="0"
-    fi
-    if [[ $i -lt $((gpu_count - 1)) ]]; then
-        hs_array+=","
-    fi
-done
-hs_array+="]"
+bus_array="["
 
-# Get GPU temperatures from nvidia-smi
+for ((i=0; i<gpu_count; i++)); do
+    gpu=$(echo "$API_RESPONSE" | jq ".gpus[$i]")
+    hr=$(echo "$gpu" | jq -r '.hashrate // 0')
+    hr_unit=$(echo "$gpu" | jq -r '.hashrate_unit // "H/s"')
+    bus_id=$(echo "$gpu" | jq -r '.bus_id // "00:00.0"')
+
+    # Convert hashrate to H/s
+    case "$hr_unit" in
+        "H/s")  hs_val=$(echo "$hr" | awk '{printf "%.0f", $1}') ;;
+        "KH/s") hs_val=$(echo "$hr" | awk '{printf "%.0f", $1 * 1000}') ;;
+        "MH/s") hs_val=$(echo "$hr" | awk '{printf "%.0f", $1 * 1000000}') ;;
+        "GH/s") hs_val=$(echo "$hr" | awk '{printf "%.0f", $1 * 1000000000}') ;;
+        "TH/s") hs_val=$(echo "$hr" | awk '{printf "%.0f", $1 * 1000000000000}') ;;
+        *)      hs_val=0 ;;
+    esac
+
+    # Convert bus_id "00:06.0" to decimal
+    bus_hex=$(echo "$bus_id" | grep -oP '^[0-9A-Fa-f]+' | head -1)
+    bus_dec=$((16#${bus_hex:-0}))
+
+    [[ $i -gt 0 ]] && hs_array+="," && bus_array+=","
+    hs_array+="$hs_val"
+    bus_array+="$bus_dec"
+done
+
+hs_array+="]"
+bus_array+="]"
+
+# Get GPU temperatures and fans from nvidia-smi (API doesn't provide these)
 temps_array="["
 fans_array="["
-bus_array="["
 
 if command -v nvidia-smi &> /dev/null; then
     gpu_temps=$(nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits 2>/dev/null)
     gpu_fans=$(nvidia-smi --query-gpu=fan.speed --format=csv,noheader,nounits 2>/dev/null)
-    gpu_bus=$(nvidia-smi --query-gpu=pci.bus_id --format=csv,noheader 2>/dev/null)
 
     i=0
     while IFS= read -r temp; do
@@ -121,31 +103,16 @@ if command -v nvidia-smi &> /dev/null; then
         fans_array+="$fan"
         ((i++))
     done <<< "$gpu_fans"
-
-    i=0
-    while IFS= read -r bus; do
-        [[ $i -gt 0 ]] && bus_array+=","
-        # Extract bus number from format like "00000000:01:00.0"
-        bus_num=$(echo "$bus" | grep -oP ':\K[0-9A-Fa-f]{2}(?=:)' | head -1)
-        bus_dec=$((16#${bus_num:-0}))
-        bus_array+="$bus_dec"
-        ((i++))
-    done <<< "$gpu_bus"
 else
-    # No nvidia-smi, fill with nulls
     for ((i=0; i<gpu_count; i++)); do
-        [[ $i -gt 0 ]] && temps_array+=","
-        [[ $i -gt 0 ]] && fans_array+=","
-        [[ $i -gt 0 ]] && bus_array+=","
+        [[ $i -gt 0 ]] && temps_array+="," && fans_array+=","
         temps_array+="null"
         fans_array+="null"
-        bus_array+="null"
     done
 fi
 
 temps_array+="]"
 fans_array+="]"
-bus_array+="]"
 
 # Build stats JSON for HiveOS
 stats=$(jq -n \
@@ -158,7 +125,7 @@ stats=$(jq -n \
     --arg ac "$ac" \
     --arg rj "$rj" \
     --argjson bus_numbers "$bus_array" \
-    --arg ver "ninja-vecno" \
+    --arg ver "ninja-vecno $miner_version" \
     '{hs: $hs, hs_units: $hs_units, algo: $algo, temp: $temp, fan: $fan, uptime: $uptime, ar: [$ac, $rj], bus_numbers: $bus_numbers, ver: $ver}')
 
 [[ -z "$khs" ]] && khs=0
