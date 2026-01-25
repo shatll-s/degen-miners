@@ -45,7 +45,7 @@ fi
 echo "Pool mode: $STRATUM_SERVER:$STRATUM_PORT"
 
 # API port for stats
-API_PORT=${NINJA_VECNO_API_PORT:-38080}
+API_PORT=38083
 MINER_ARGS="$MINER_ARGS --api-port $API_PORT"
 
 # Add any extra user config arguments

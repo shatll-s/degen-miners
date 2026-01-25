@@ -17,7 +17,7 @@ API_PORT_FILE="$MINER_PATH/api_port.txt"
 if [[ -f "$API_PORT_FILE" ]]; then
     API_PORT=$(cat "$API_PORT_FILE")
 else
-    API_PORT=38080
+    API_PORT=38083
 fi
 
 # Fetch stats from API
@@ -130,3 +130,4 @@ stats=$(jq -n \
 
 [[ -z "$khs" ]] && khs=0
 [[ -z "$stats" ]] && stats="null"
+echo $stats | jq '.'
