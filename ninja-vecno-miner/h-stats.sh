@@ -109,14 +109,16 @@ if command -v nvidia-smi &> /dev/null; then
     i=0
     while IFS= read -r temp; do
         [[ $i -gt 0 ]] && temps_array+=","
-        temps_array+="${temp:-null}"
+        [[ "$temp" == *"N/A"* || -z "$temp" ]] && temp="null"
+        temps_array+="$temp"
         ((i++))
     done <<< "$gpu_temps"
 
     i=0
     while IFS= read -r fan; do
         [[ $i -gt 0 ]] && fans_array+=","
-        fans_array+="${fan:-null}"
+        [[ "$fan" == *"N/A"* || -z "$fan" ]] && fan="null"
+        fans_array+="$fan"
         ((i++))
     done <<< "$gpu_fans"
 
