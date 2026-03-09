@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -x
 
 conf=$(cat $MINER_DIR/$CUSTOM_MINER/config_global.json | envsubst)
 
@@ -28,12 +29,12 @@ if [[ ! -z $CUSTOM_USER_CONFIG ]]; then
 fi
 
 # merge pools into main config
-local pools='[]'
+pools='[]'
 
 for url in $CUSTOM_URL; do
 	pool=$(cat <<EOF
 		{
-			"algo": null,
+			"algo": "rx/snap",
 			"coin": null,
 			"url": "$url",
 			"user": "$CUSTOM_TEMPLATE",
@@ -42,7 +43,7 @@ for url in $CUSTOM_URL; do
 			"nicehash": false,
 			"keepalive": true,
 			"enabled": true,
-			"tls": false,
+			"tls": true,
 			"tls-fingerprint": null,
 			"daemon": false,
 			"self-select": false
